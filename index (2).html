@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天赋自测：找到你的核心优势</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #fdf2f8 0%, #fef7fb 100%);
+            padding: 20px;
+            color: #333;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px 20px;
+            box-shadow: 0 8px 24px rgba(233, 30, 99, 0.08);
+        }
+        /* 引导页样式升级 - 测试说明拆分为4个色块 */
+        .guide-box {
+            display: block;
+            text-align: center;
+        }
+        .guide-header {
+            background: linear-gradient(90deg, #e91e63, #ec407a);
+            color: white;
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+        }
+        .guide-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .guide-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .guide-desc {
+            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        .guide-item {
+            background: #fef0f5;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: left;
+            color: #444;
+            border-left: 4px solid #e91e63;
+        }
+        .guide-item p {
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        .guide-item p span {
+            color: #e91e63;
+            font-weight: 600;
+        }
+        .start-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(90deg, #e91e63, #ec407a);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(233, 30, 99, 0.2);
+            transition: all 0.2s ease;
+        }
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(233, 30, 99, 0.3);
+        }
+
+        /* 答题区域样式 - 移除右上角天赋维度标签 */
+        .question-box {
+            margin-bottom: 30px;
+            display: none;
+        }
+        .progress {
+            height: 10px;
+            background: #f5f5f5;
+            border-radius: 5px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #e91e63, #ec407a);
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .question-header {
+            display: flex;
+            justify-content: flex-start; /* 仅保留题目计数，移除右侧标签 */
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+        .question-text {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            color: #2c3e50;
+        }
+        .option-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .option-item {
+            padding: 18px;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 16px;
+        }
+        .option-item:hover {
+            border-color: #e91e63;
+            background: #fef0f5;
+        }
+        .option-item.active {
+            background: linear-gradient(90deg, #e91e63, #ec407a);
+            color: white;
+            border-color: #e91e63;
+        }
+        .nav-btn-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+        }
+        .btn {
+            padding: 12px 24px;
+            background: #e91e63;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn:hover {
+            background: #d81b60;
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 结果页面样式 - 强化积极分析和建议 */
+        .result-box {
+            display: none;
+            padding: 10px 0;
+        }
+        .result-title {
+            font-size: 22px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 30px;
+        }
+        .score-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
+        .score-table th, .score-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .score-table th {
+            color: #666;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .score-table td {
+            color: #2c3e50;
+            font-size: 15px;
+        }
+        .score-value {
+            color: #e91e63;
+            font-weight: 600;
+        }
+        .result-analysis {
+            background: #fef0f5;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 25px;
+            line-height: 1.8;
+            font-size: 15px;
+            color: #444;
+        }
+        .result-analysis .highlight {
+            color: #e91e63;
+            font-weight: 700;
+            font-size: 16px;
+        }
+        .restart-btn {
+            width: 100%;
+            padding: 16px;
+            background: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .restart-btn:hover {
+            background: #1a2533;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 测试引导页 - 4个独立色块展示测试说明 -->
+        <div class="guide-box" id="guideBox">
+            <div class="guide-header">
+                <div class="guide-title">天赋自测：找到你的核心优势</div>
+                <div class="guide-subtitle">解锁专属你的天赋密码</div>
+            </div>
+            <div class="guide-desc">
+                <div class="guide-item">
+                    <p>📝 <span>题量说明：</span>本次测试共30道题目，覆盖语言、逻辑、空间等10大天赋维度</p>
+                </div>
+                <div class="guide-item">
+                    <p>⏱️ <span>时长说明：</span>预计完成时长约5-8分钟，请预留充足时间认真作答</p>
+                </div>
+                <div class="guide-item">
+                    <p>💡 <span>作答建议：</span>建议在安静、无干扰的环境下作答，凭第一直觉选择最贴合的答案</p>
+                </div>
+                <div class="guide-item">
+                    <p>❤️ <span>测试初衷：</span>每题无对错之分，仅用于探索你的天赋倾向，请真实作答</p>
+                </div>
+            </div>
+            <button class="start-btn" id="startBtn">开始探索我的天赋</button>
+        </div>
+        
+        <!-- 答题页面 - 移除右上角天赋维度标签 -->
+        <div class="question-box" id="questionBox">
+            <div class="progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="question-header">
+                <span>第<span id="questionNum">1</span>题/共30题</span>
+            </div>
+            <div class="question-text" id="questionText"></div>
+            <div class="option-list" id="optionList"></div>
+            <div class="nav-btn-group">
+                <button class="btn" id="prevBtn" disabled>上一题</button>
+                <button class="btn" id="nextBtn" disabled>下一题</button>
+            </div>
+        </div>
+        
+        <!-- 结果页面 - 强化积极分析和建议 -->
+        <div class="result-box" id="resultBox">
+            <div class="result-title">你的专属天赋能力图谱</div>
+            <div class="chart-container">
+                <canvas id="talentChart"></canvas>
+            </div>
+            <table class="score-table">
+                <thead>
+                    <tr>
+                        <th>天赋维度</th>
+                        <th>你的得分</th>
+                        <th>满分</th>
+                    </tr>
+                </thead>
+                <tbody id="scoreTableBody">
+                    <!-- 动态生成分值表格 -->
+                </tbody>
+            </table>
+            <div class="result-analysis" id="resultAnalysis"></div>
+            <button class="restart-btn" id="restartBtn">重新测试</button>
+        </div>
+    </div>
+
+    <script>
+        // 30道自测题：关联具体天赋维度，题目内容具体化
+        const questions = [
+            // 语言天赋
+            { type: "语言", content: "你能快速准确地表达自己的想法，和他人沟通时很少出现误解" },
+            { type: "语言", content: "你喜欢阅读、写作，记单词或学习新语言的速度比身边人快" },
+            // 逻辑算数
+            { type: "逻辑算数", content: "解决数学问题、分析数据时，你能快速找到规律和解题思路" },
+            { type: "逻辑算数", content: "面对复杂的逻辑问题（如推理题），你能清晰梳理因果关系" },
+            // 空间天赋
+            { type: "空间", content: "你有很强的方向感，陌生环境也能快速认路，看地图毫无压力" },
+            { type: "空间", content: "拼装积木/家具、想象立体图形时，你能快速理解空间结构" },
+            // 内省天赋
+            { type: "内省", content: "你能清晰感知自己的情绪变化，知道自己的优势和不足" },
+            { type: "内省", content: "面对压力时，你能快速调整心态，找到适合自己的解压方式" },
+            // 人际天赋
+            { type: "人际", content: "你擅长和陌生人打交道，短时间内就能建立舒适的沟通氛围" },
+            { type: "人际", content: "团队中你能快速察觉他人情绪，擅长协调矛盾、促进合作" },
+            // 身体-动觉
+            { type: "身体-动觉", content: "运动、手工制作时，你的肢体协调性和动手能力远超常人" },
+            { type: "身体-动觉", content: "学习新的肢体动作（如舞蹈、球类）时，你能快速掌握要领" },
+            // 音乐天赋
+            { type: "音乐", content: "你对音准、节奏敏感，能快速记住旋律，甚至能哼唱没学过的曲子" },
+            { type: "音乐", content: "听到音乐时，你能快速分辨乐器类型，感知音乐传达的情绪" },
+            // 自然天赋
+            { type: "自然", content: "你对自然环境敏感，能快速辨别植物/动物种类，喜欢户外探索" },
+            { type: "自然", content: "你擅长观察自然规律（如天气变化、动植物生长），并总结经验" },
+            // 创造天赋
+            { type: "创造", content: "面对问题时，你总能想到与众不同的解决方法，想象力丰富" },
+            { type: "创造", content: "你喜欢创意类活动（如绘画、写故事），能快速产生新想法" },
+            // 美学天赋
+            { type: "美学", content: "你对色彩、搭配、装饰有敏锐的感知，审美能力得到身边人认可" },
+            { type: "美学", content: "挑选服饰、布置空间时，你能快速搭配出协调美观的效果" },
+            // 补充细分能力题目
+            { type: "语言", content: "你擅长演讲/表达，能清晰生动地向他人传递复杂信息" },
+            { type: "逻辑算数", content: "处理紧急情况时，你能保持冷静，快速分析并做出决策" },
+            { type: "空间", content: "你对细节的辨别力强，能快速发现图片/场景中的细微差异" },
+            { type: "内省", content: "你的抗压力强，面对挫折能快速恢复并继续前进" },
+            { type: "人际", content: "你擅长倾听，能让他人愿意倾诉，是身边人的“情绪树洞”" },
+            { type: "身体-动觉", content: "手工DIY（如折纸、陶艺）时，你能做出精细且美观的作品" },
+            { type: "音乐", content: "你的听力敏锐，能分辨细微的声音差异（如不同人的脚步声）" },
+            { type: "创造", content: "你擅长将不同的想法结合，创造出全新的解决方案或作品" },
+            { type: "美学", content: "你对美感有高要求，能快速发现环境/物品中的不协调之处" },
+            { type: "自然", content: "你擅长从自然中获取灵感，喜欢用自然元素进行创作/装饰" }
+        ];
+
+        // 选项配置（分值0-4）
+        const options = [
+            { text: "完全不符合", score: 0 },
+            { text: "不太符合", score: 1 },
+            { text: "一般", score: 2 },
+            { text: "比较符合", score: 3 },
+            { text: "完全符合", score: 4 }
+        ];
+
+        // 天赋维度配置（对应最终展示的10大维度）
+        const talentDimensions = [
+            "语言", "逻辑算数", "空间", "内省", "人际",
+            "身体-动觉", "音乐", "自然", "创造", "美学"
+        ];
+
+        // 全局变量
+        let currentIndex = 0; // 当前题目索引
+        let answerRecord = new Array(questions.length).fill(-1); // 存储每道题的答案
+        let talentScores = {}; // 存储各天赋维度总分
+        // 初始化天赋分值为0
+        talentDimensions.forEach(dim => {
+            talentScores[dim] = 0;
+        });
+
+        // DOM元素
+        const guideBox = document.getElementById("guideBox");
+        const questionBox = document.getElementById("questionBox");
+        const progressBar = document.getElementById("progressBar");
+        const questionNum = document.getElementById("questionNum");
+        const questionText = document.getElementById("questionText");
+        const optionList = document.getElementById("optionList");
+        const prevBtn = document.getElementById("prevBtn");
+        const nextBtn = document.getElementById("nextBtn");
+        const startBtn = document.getElementById("startBtn");
+        const resultBox = document.getElementById("resultBox");
+        const talentChart = document.getElementById("talentChart");
+        const scoreTableBody = document.getElementById("scoreTableBody");
+        const resultAnalysis = document.getElementById("resultAnalysis");
+        const restartBtn = document.getElementById("restartBtn");
+
+        // 初始化页面
+        function init() {
+            bindEvents();
+            // 预加载雷达图（避免首次渲染卡顿）
+            Chart.defaults.font.family = "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+
+        // 渲染引导页（默认展示）
+        function showGuide() {
+            guideBox.style.display = "block";
+            questionBox.style.display = "none";
+            resultBox.style.display = "none";
+        }
+
+        // 渲染当前题目
+        function renderQuestion() {
+            if (currentIndex >= questions.length) {
+                calculateTalentScores();
+                showResult();
+                return;
+            }
+
+            // 显示答题页
+            guideBox.style.display = "none";
+            questionBox.style.display = "block";
+            resultBox.style.display = "none";
+
+            // 更新题目信息
+            const currentQ = questions[currentIndex];
+            questionNum.innerText = currentIndex + 1;
+            questionText.innerText = currentQ.content;
+
+            // 更新进度条
+            updateProgress();
+
+            // 更新上下题按钮状态
+            prevBtn.disabled = currentIndex === 0;
+            nextBtn.disabled = answerRecord[currentIndex] === -1;
+
+            // 渲染选项
+            optionList.innerHTML = "";
+            options.forEach(option => {
+                const optionItem = document.createElement("div");
+                optionItem.className = "option-item";
+                optionItem.innerText = option.text;
+                optionItem.dataset.score = option.score;
+                
+                // 恢复已选中的答案
+                if (answerRecord[currentIndex] === option.score) {
+                    optionItem.classList.add("active");
+                }
+
+                // 选项点击事件：选中后自动跳题
+                optionItem.addEventListener("click", () => {
+                    // 移除其他选项的选中状态
+                    document.querySelectorAll(".option-item").forEach(item => {
+                        item.classList.remove("active");
+                    });
+                    // 添加当前选项选中状态
+                    optionItem.classList.add("active");
+                    const selectedScore = parseInt(optionItem.dataset.score);
+                    answerRecord[currentIndex] = selectedScore;
+
+                    // 更新下一题按钮状态
+                    nextBtn.disabled = false;
+
+                    // 自动跳题（延迟300ms提升体验）
+                    setTimeout(() => {
+                        if (currentIndex === questions.length - 1) {
+                            calculateTalentScores();
+                            showResult();
+                        } else {
+                            currentIndex++;
+                            renderQuestion();
+                        }
+                    }, 300);
+                });
+
+                optionList.appendChild(optionItem);
+            });
+        }
+
+        // 计算各天赋维度总分
+        function calculateTalentScores() {
+            // 重置分值
+            talentDimensions.forEach(dim => {
+                talentScores[dim] = 0;
+            });
+            
+            // 按题目维度累加分值
+            questions.forEach((q, index) => {
+                const score = answerRecord[index];
+                if (score === -1) return; // 未作答的题不计分
+                talentScores[q.type] += score;
+            });
+        }
+
+        // 更新进度条
+        function updateProgress() {
+            const progress = ((currentIndex + 1) / questions.length) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        // 绑定事件
+        function bindEvents() {
+            // 开始测试按钮
+            startBtn.addEventListener("click", () => {
+                currentIndex = 0;
+                answerRecord = new Array(questions.length).fill(-1);
+                talentDimensions.forEach(dim => {
+                    talentScores[dim] = 0;
+                });
+                renderQuestion();
+            });
+
+            // 上一题按钮
+            prevBtn.addEventListener("click", () => {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    renderQuestion();
+                }
+            });
+
+            // 下一题按钮（手动切换）
+            nextBtn.addEventListener("click", () => {
+                if (currentIndex < questions.length - 1 && answerRecord[currentIndex] !== -1) {
+                    currentIndex++;
+                    renderQuestion();
+                }
+            });
+
+            // 重新测试按钮
+            restartBtn.addEventListener("click", () => {
+                currentIndex = 0;
+                answerRecord = new Array(questions.length).fill(-1);
+                talentDimensions.forEach(dim => {
+                    talentScores[dim] = 0;
+                });
+                showGuide();
+                // 销毁旧图表
+                if (window.talentChartInstance) {
+                    window.talentChartInstance.destroy();
+                }
+            });
+        }
+
+        // 展示结果
+        function showResult() {
+            questionBox.style.display = "none";
+            resultBox.style.display = "block";
+
+            // 生成分值表格
+            renderScoreTable();
+            
+            // 生成天赋雷达图
+            renderTalentChart();
+            
+            // 生成积极的结果分析和建议
+            generatePositiveAnalysis();
+        }
+
+        // 渲染分值表格
+        function renderScoreTable() {
+            scoreTableBody.innerHTML = "";
+            talentDimensions.forEach(dim => {
+                const maxScore = getMaxScoreByDim(dim);
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${dim}</td>
+                    <td class="score-value">${talentScores[dim]}</td>
+                    <td>${maxScore}</td>
+                `;
+                scoreTableBody.appendChild(row);
+            });
+        }
+
+        // 获取维度满分（每个维度的题目数 * 4）
+        function getMaxScoreByDim(dim) {
+            const count = questions.filter(q => q.type === dim).length;
+            return count * 4;
+        }
+
+        // 渲染天赋雷达图
+        function renderTalentChart() {
+            // 销毁旧图表
+            if (window.talentChartInstance) {
+                window.talentChartInstance.destroy();
+            }
+
+            // 准备图表数据
+            const scores = talentDimensions.map(dim => talentScores[dim]);
+            const maxScores = talentDimensions.map(dim => getMaxScoreByDim(dim));
+            // 计算相对分值（0-100）
+            const relativeScores = scores.map((score, index) => (score / maxScores[index]) * 100);
+
+            // 创建雷达图
+            window.talentChartInstance = new Chart(talentChart, {
+                type: 'radar',
+                data: {
+                    labels: talentDimensions,
+                    datasets: [{
+                        label: '你的天赋分值',
+                        data: relativeScores,
+                        backgroundColor: 'rgba(233, 30, 99, 0.2)',
+                        borderColor: 'rgba(233, 30, 99, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(233, 30, 99, 1)',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            angleLines: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 12
+                                },
+                                color: '#2c3e50'
+                            },
+                            ticks: {
+                                backdropColor: 'transparent',
+                                color: '#666',
+                                font: {
+                                    size: 10
+                                },
+                                max: 100,
+                                min: 0,
+                                stepSize: 20
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const dim = context.label;
+                                    const score = talentScores[dim];
+                                    const maxScore = getMaxScoreByDim(dim);
+                                    return `${dim}：${score}/${maxScore}（${context.raw.toFixed(0)}分）`;
+                                }
+                            }
+                        }
+                    },
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // 生成积极的结果分析和建议（核心优化点）
+        function generatePositiveAnalysis() {
+            // 找到最高分和次高分维度
+            let sortedDims = talentDimensions.map(dim => ({
+                name: dim,
+                score: (talentScores[dim] / getMaxScoreByDim(dim)) * 100
+            })).sort((a, b) => b.score - a.score);
+
+            const top1Dim = sortedDims[0];
+            const top2Dim = sortedDims[1];
+            const top3Dim = sortedDims[2];
+
+            // 生成充满正能量的分析文案
+            let analysis = `
+                <p class="highlight">🎉 恭喜你！发现了自己的核心天赋优势</p><br>
+                <p><strong>🌟 你的核心天赋：${top1Dim.name}</strong></p>
+                <p>你的${top1Dim.name}天赋得分高达${top1Dim.score.toFixed(0)}分，这是你最独特、最闪耀的优势！这种天赋是你与生俱来的宝藏，也是你区别于他人的核心竞争力。</p><br>
+                <p><strong>✨ 你的潜力天赋：${top2Dim.name}、${top3Dim.name}</strong></p>
+                <p>除了核心天赋，你的${top2Dim.name}（${top2Dim.score.toFixed(0)}分）和${top3Dim.name}（${top3Dim.score.toFixed(0)}分）也展现出不俗的潜力，这些天赋可以和核心天赋相互加持，让你拥有更全面的能力矩阵。</p><br>
+                <p><strong>💖 专属发展建议</strong></p>
+                <p>1. 发挥优势：多参与能展现${top1Dim.name}天赋的活动（如${getSuggestionByDim(top1Dim.name)}），让你的优势被更多人看见；</p>
+                <p>2. 潜力挖掘：利用碎片化时间培养${top2Dim.name}能力，让潜力天赋成为你的加分项；</p>
+                <p>3. 组合发展：尝试将${top1Dim.name}与${top2Dim.name}结合（如${getCombinationSuggestion(top1Dim.name, top2Dim.name)}），打造独一无二的个人优势；</p>
+                <p>4. 心态赋能：每个人都有自己的天赋节奏，不必和他人比较，专注发挥自己的优势，你就是最棒的！</p><br>
+                <p><strong>💌 最后想对你说</strong></p>
+                <p>天赋不是一成不变的，它需要你的发现、培养和坚持。无论现在的得分如何，都只是当下的状态，只要你愿意，每一种天赋都能通过努力得到提升。勇敢地去探索、去尝试，你的天赋终将绽放出最美的光芒！</p>
+            `;
+
+            resultAnalysis.innerHTML = analysis;
+        }
+
+        // 根据维度获取提升建议
+        function getSuggestionByDim(dim) {
+            const suggestions = {
+                "语言": "朗读美文、尝试写作、参加线上演讲分享",
+                "逻辑算数": "做趣味数独、分析生活中的数据、玩逻辑推理小游戏",
+                "空间": "拼乐高积木、手绘地图、尝试简单的室内设计",
+                "内省": "写情绪日记、每天5分钟冥想、定期做自我复盘",
+                "人际": "主动认识新朋友、参与公益活动、练习倾听和共情",
+                "身体-动觉": "学习一支舞蹈、尝试手工陶艺、每周坚持运动",
+                "音乐": "学唱喜欢的歌曲、听纯音乐培养乐感、尝试简单的乐器",
+                "自然": "周末户外徒步、养一盆小植物、观察身边的自然现象",
+                "创造": "每天记录一个创意想法、尝试创意绘画、做头脑风暴练习",
+                "美学": "搭配自己的穿搭、布置书桌/房间、欣赏优秀的艺术作品"
+            };
+            return suggestions[dim] || "相关兴趣活动";
+        }
+
+        // 天赋组合发展建议
+        function getCombinationSuggestion(dim1, dim2) {
+            const combinations = {
+                "语言+人际": "做沟通类的分享博主、从事销售或客服工作",
+                "逻辑算数+创造": "做产品设计、尝试编程开发创意工具",
+                "空间+美学": "做软装设计、尝试摄影或短视频创作",
+                "音乐+创造": "创作原创歌曲、做音乐类自媒体",
+                "身体-动觉+美学": "学习舞蹈编导、尝试时尚走秀",
+                "内省+人际": "做心理咨询师、成为团队的情绪支持者",
+                "自然+美学": "做自然风软装设计、尝试植物造景",
+                "语言+创造": "写小说或剧本、做内容创作博主",
+                "逻辑算数+空间": "做建筑设计、尝试游戏开发",
+                "人际+美学": "做美妆博主、从事奢侈品顾问工作"
+            };
+            const key = `${dim1}+${dim2}`;
+            const reverseKey = `${dim2}+${dim1}`;
+            return combinations[key] || combinations[reverseKey] || "将两种能力结合的创意类活动";
+        }
+
+        // 页面加载完成后初始化
+        window.onload = init;
+    </script>
+</body>
+</html>
